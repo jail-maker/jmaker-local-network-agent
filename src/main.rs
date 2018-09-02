@@ -2,6 +2,7 @@ extern crate ipnetwork;
 #[macro_use]
 extern crate serde_json;
 extern crate actix_web;
+extern crate actix;
 extern crate clap;
 
 use ipnetwork::Ipv4Network;
@@ -9,11 +10,15 @@ use std::process::Command;
 use serde_json::{Value, Error};
 
 use actix_web::{http, server, App as WebApp, Path, HttpRequest, HttpResponse};
+use actix::prelude::*;
 use clap::{Arg, App as ClapApp, SubCommand};
+
 
 fn type_arg(arg: i32) {}
 
 fn main() {
+
+    let sys = actix::System::new("actix-env");
 
     let argv = ClapApp::new("jmaker local network agent")
         .arg(
@@ -43,36 +48,39 @@ fn main() {
         )
         .get_matches();
 
-    use std::sync::Arc;
 
-    let iface = Arc::new(argv.value_of("iface").unwrap().to_string());
+    use actix::{SyncArbiter};
     // let network = argv.value_of("network").unwrap();
     let bind = argv.value_of("bind").unwrap().to_string();
-
-    // type_arg(iface);
-    let iface2 = iface.clone();
-
-    server::new(|| {
-
-        WebApp::new()
-            .route("/", http::Method::GET, |_request: HttpRequest| {
-
-                println!("{:?}", iface);
+    let data = argv.value_of("iface").unwrap().to_string();
+    let ip = SyncArbiter::start(3, move || {
+        OutterIp("asdad".to_string())
+    });
 
 
-                let ip = get_free_ip("lo0").unwrap();
-                let body = json!({
-                    "ip": ip,
-                    "interface": "lo0"
-                });
+    server::new(move || {
 
-                HttpResponse::Ok()
-                    .header("content-type", "application/json")
-                    .body(body.to_string())
-
-            })
-
+        WebApp::with_state(IpState {ip: ip.clone()})
+            .route("/", http::Method::GET, index)
     }).bind(bind).unwrap().run();
+
+}
+
+fn index(req: HttpRequest<IpState>) -> HttpResponse {
+
+    // println!("{:?}", &iface);
+
+
+    let ip = get_free_ip("lo0").unwrap();
+    let body = json!({
+        "ip": ip,
+        "interface": "lo0"
+    });
+
+    HttpResponse::Ok()
+        .header("content-type", "application/json")
+        .body(body.to_string())
+
 
 }
 
@@ -119,4 +127,15 @@ fn get_free_ip(iface: &str) -> Option<String> {
 
     Some(free_ip.unwrap().to_string())
 
+}
+
+struct OutterIp(String);
+
+struct IpState {
+    ip: Addr<OutterIp>
+}
+
+
+impl Actor for OutterIp {
+    type Context = SyncContext<Self>;
 }
