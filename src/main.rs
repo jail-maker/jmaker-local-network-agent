@@ -64,11 +64,14 @@ fn main() {
             .route("/", http::Method::GET, index)
     }).bind(bind).unwrap().run();
 
+    let _ = sys.run();
 }
 
 fn index(req: HttpRequest<IpState>) -> HttpResponse {
 
     // println!("{:?}", &iface);
+
+    req.state();
 
 
     let ip = get_free_ip("lo0").unwrap();
