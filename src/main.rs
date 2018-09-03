@@ -66,7 +66,7 @@ fn main() {
                 let ip = get_free_ip(&state.iface, &state.network).unwrap();
                 let body = json!({
                     "ip": ip,
-                    "interface": state.iface
+                    "iface": state.iface
                 });
 
                 HttpResponse::Ok()
