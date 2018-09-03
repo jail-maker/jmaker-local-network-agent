@@ -1,6 +1,8 @@
-extern crate ipnetwork;
 #[macro_use]
 extern crate serde_json;
+#[macro_use]
+extern crate lazy_static;
+extern crate ipnetwork;
 extern crate actix_web;
 extern crate clap;
 
@@ -10,6 +12,19 @@ use serde_json::{Value, Error};
 
 use actix_web::{http, server, App as WebApp, HttpRequest, HttpResponse};
 use clap::{Arg, App as ClapApp};
+
+use std::collections::HashMap;
+use std::time::{SystemTime, Duration};
+use std::sync::Mutex;
+use std::sync::Arc;
+
+lazy_static! {
+
+    static ref RESERVED: Mutex<HashMap<String, SystemTime>> = {
+        Mutex::new(HashMap::new())
+    };
+
+}
 
 #[derive(Debug)]
 struct AppState {
@@ -46,8 +61,6 @@ fn main() {
                 .required(true)
         )
         .get_matches();
-
-    use std::sync::Arc;
 
     let bind = argv.value_of("bind").unwrap().to_string();
 
@@ -107,14 +120,49 @@ fn get_free_ip(iface: &str, network: &str) -> Option<String> {
     let network: Ipv4Network = network.parse().unwrap();
     let broadcast = network.broadcast();
     let network_addr = network.network();
+
+    let mut reserved = RESERVED.lock().unwrap();
+    let duration = Duration::new(5, 0);
+    let now = SystemTime::now();
+
     let free_ip = network.iter().find(|ip| {
+
+        let ip_string = ip.to_string();
+        let res = &reserved;
+
+        match reserved.get(&ip_string) {
+
+            Some(time) => {
+
+                if time >= &now {
+
+                    return false;
+
+                } else {
+
+                    // reserved.borrow_mut().remove(&ip_string);
+
+                }
+
+            },
+            _ => {}
+
+        };
 
         if ip == &broadcast || ip == &network_addr {
             return false;
         }
 
-        if ips.contains(&ip.to_string()) { false }
-        else { true }
+        if ips.contains(&ip_string) { 
+
+            false 
+
+        } else {
+
+            reserved.insert(ip_string, now + duration);
+            true 
+
+        }
 
     });
 
