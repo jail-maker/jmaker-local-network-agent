@@ -8,10 +8,14 @@ use ipnetwork::Ipv4Network;
 use std::process::Command;
 use serde_json::{Value, Error};
 
-use actix_web::{http, server, App as WebApp, Path, HttpRequest, HttpResponse};
-use clap::{Arg, App as ClapApp, SubCommand};
+use actix_web::{http, server, App as WebApp, HttpRequest, HttpResponse};
+use clap::{Arg, App as ClapApp};
 
-fn type_arg(arg: i32) {}
+#[derive(Debug)]
+struct AppState {
+    iface: String,
+    network: String,
+}
 
 fn main() {
 
@@ -45,25 +49,24 @@ fn main() {
 
     use std::sync::Arc;
 
-    let iface = Arc::new(argv.value_of("iface").unwrap().to_string());
-    // let network = argv.value_of("network").unwrap();
     let bind = argv.value_of("bind").unwrap().to_string();
 
-    // type_arg(iface);
-    let iface2 = iface.clone();
+    let state = Arc::new(AppState {
+        iface: argv.value_of("iface").unwrap().to_string(),
+        network: argv.value_of("network").unwrap().to_string(),
+    });
 
-    server::new(|| {
+    server::new(move || {
 
-        WebApp::new()
-            .route("/", http::Method::GET, |_request: HttpRequest| {
+        WebApp::with_state(state.clone())
+            .route("/api/v1/free-ip", http::Method::GET, |req: HttpRequest<Arc<AppState>>| {
 
-                println!("{:?}", iface);
+                let state = req.state();
 
-
-                let ip = get_free_ip("lo0").unwrap();
+                let ip = get_free_ip(&state.iface, &state.network).unwrap();
                 let body = json!({
                     "ip": ip,
-                    "interface": "lo0"
+                    "interface": state.iface
                 });
 
                 HttpResponse::Ok()
@@ -89,7 +92,6 @@ fn get_iface_ips(iface: &str) -> Vec<String> {
     let ips = interface.iter()
         .map(|object| {
 
-            println!("{:?}", object["address"]);
             object["address"].as_str().unwrap().to_string()
 
         })
@@ -99,11 +101,10 @@ fn get_iface_ips(iface: &str) -> Vec<String> {
 
 }
 
-fn get_free_ip(iface: &str) -> Option<String> {
+fn get_free_ip(iface: &str, network: &str) -> Option<String> {
 
     let ips = get_iface_ips(iface);
-    let ip = "127.0.0.0".parse().unwrap();
-    let network = Ipv4Network::new(ip, 8).unwrap();
+    let network: Ipv4Network = network.parse().unwrap();
     let broadcast = network.broadcast();
     let network_addr = network.network();
     let free_ip = network.iter().find(|ip| {
