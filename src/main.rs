@@ -128,21 +128,12 @@ fn get_free_ip(iface: &str, network: &str) -> Option<String> {
     let free_ip = network.iter().find(|ip| {
 
         let ip_string = ip.to_string();
-        let res = &reserved;
 
         match reserved.get(&ip_string) {
 
-            Some(time) => {
+            Some(time) if time >= &now => {
 
-                if time >= &now {
-
-                    return false;
-
-                } else {
-
-                    // reserved.borrow_mut().remove(&ip_string);
-
-                }
+                return false;
 
             },
             _ => {}
