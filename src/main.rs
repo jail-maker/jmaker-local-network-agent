@@ -17,6 +17,7 @@ use std::collections::HashMap;
 use std::time::{SystemTime, Duration};
 use std::sync::Mutex;
 use std::sync::Arc;
+use std::thread;
 
 lazy_static! {
 
@@ -61,6 +62,26 @@ fn main() {
                 .required(true)
         )
         .get_matches();
+
+    thread::spawn(|| {
+
+        loop {
+
+            thread::sleep(Duration::new(10, 0));
+
+            let mut reserved = RESERVED.lock().unwrap();
+            let clone = reserved.clone();
+            let now = SystemTime::now();
+
+            clone.iter().for_each(|(key, val)| {
+
+                if val < &now { reserved.remove(key); }
+
+            });
+
+        }
+
+    });
 
     let bind = argv.value_of("bind").unwrap().to_string();
 
