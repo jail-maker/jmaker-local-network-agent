@@ -1,0 +1,10 @@
+{
+    "name": "jmaker-local-network-agent",
+    "www": "https://github.com/jail-maker/jmaker-local-network-agent",
+    "desc": "",
+    "origin": "sysutils/jmaker-local-network-agent",
+    "comment": "",
+    "version": "0.0.1",
+    "maintainer": "",
+    "prefix": "/usr/local"
+}

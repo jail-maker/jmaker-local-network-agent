@@ -1,0 +1,32 @@
+#!/bin/sh
+#
+
+# PROVIDE: jmaker_local_network_agent
+# REQUIRE: NETWORKING
+
+. /etc/rc.subr
+
+export PATH="$PATH:/usr/local/bin"
+_programm="jmaker-local-network-agent"
+_procname="/usr/local/bin/${_programm}"
+
+name="jmaker_local_network_agent"
+rcvar=${name}_enable
+
+load_rc_config $name
+
+pidfile="/var/run/${_programm}"
+procname="/usr/local/bin/jmaker-local-network-agent"
+command="/usr/sbin/daemon"
+
+: ${jmaker_local_network_agent_enable="NO"}
+: ${jmaker_local_network_agent_interface="lo1"}
+: ${jmaker_local_network_agent_network="127.0.0.0/8"}
+: ${jmaker_local_network_agent_bind="127.0.0.1:3000"}
+
+command_args="-f -t ${_programm} -p ${pidfile} ${_procname} \
+-i ${jmaker_local_network_agent_interface} \
+-n ${jmaker_local_network_agent_network} \
+-b ${jmaker_local_network_agent_bind}"
+
+run_rc_command "$1"

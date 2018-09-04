@@ -1,0 +1,2 @@
+bin/jmaker-local-network-agent
+etc/rc.d/jmaker-local-network-agent
