@@ -57,7 +57,7 @@ fn main() {
             Arg::with_name("bind")
                 .short("b")
                 .long("bind")
-                .default_value("127.0.0.1:3000")
+                .default_value("127.0.0.1:3367")
                 .takes_value(true)
                 .required(true)
         )

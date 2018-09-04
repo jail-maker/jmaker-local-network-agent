@@ -22,7 +22,7 @@ command="/usr/sbin/daemon"
 : ${jmaker_local_network_agent_enable="NO"}
 : ${jmaker_local_network_agent_interface="lo1"}
 : ${jmaker_local_network_agent_network="127.0.0.0/8"}
-: ${jmaker_local_network_agent_bind="127.0.0.1:3000"}
+: ${jmaker_local_network_agent_bind="127.0.0.1:3367"}
 
 command_args="-f -t ${_programm} -p ${pidfile} ${_procname} \
 -i ${jmaker_local_network_agent_interface} \
